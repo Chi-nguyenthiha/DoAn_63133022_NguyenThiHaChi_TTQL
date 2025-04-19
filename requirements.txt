@@ -1,0 +1,13 @@
+Flask==3.1.0
+flask-cors==5.0.1
+
+numpy==1.26.4
+pandas==2.2.2
+
+tensorflow==2.18.0
+keras==3.6.0
+
+scikit-learn==1.6.1
+
+# Optional - nếu bạn dùng pickle cho model hoặc dữ liệu đã dump
+# Không cần cài riêng vì pickle có sẵn trong Python standard lib
