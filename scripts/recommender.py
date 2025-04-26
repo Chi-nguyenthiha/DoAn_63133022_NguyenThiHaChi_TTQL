@@ -158,4 +158,4 @@ with Timer() as test_time:
     all_predictions = merged[merged.rating.isnull()].drop('rating', axis=1)
 
 print("Took {} seconds for prediction.".format(test_time.interval))
-nếu tôi lấy 50% ngẫu nhiên từ data ra, 50% còn lại để trai/test huấn luyện mô hình thì tôi dùng mô hình đó dự đoán cho 50% tôi đã lấy ra trước đó không
+#nếu tôi lấy 50% ngẫu nhiên từ data ra, 50% còn lại để trai/test huấn luyện mô hình thì tôi dùng mô hình đó dự đoán cho 50% tôi đã lấy ra trước đó không
