@@ -1,117 +1,158 @@
 from flask import Flask, render_template, request
-import numpy as np
+import torch
 import pandas as pd
-import pickle
-from tensorflow.keras.models import load_model
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.model_selection import train_test_split
+import sys
 
-# Tạo Flask app
+# Thêm thư mục chứa utils vào sys.path
+sys.path.append('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/scripts/ncf-utils')
+
+from utils import Utils, EarlyStopping, cols_dict
+from model import NCF
+
 app = Flask(__name__)
 
-# Load model và mapping
-model = load_model("/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/notebooks/ncf_model.h5")
 
-with open("/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/notebooks/user_mapping.pkl", "rb") as f:
-    user_mapping = pickle.load(f)
+# Đường dẫn dữ liệu
+ratings_data_path = '/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/ratings.dat'
+users_data_path = '/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/users.dat'
+items_data_path = '/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/movies.dat'
 
-with open("/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/notebooks/movie_mapping.pkl", "rb") as f:
-    movie_mapping = pickle.load(f)
+ratings_data = pd.read_csv(ratings_data_path, sep='::', names=cols_dict['ratings'], engine='python')
+users_data = pd.read_csv(users_data_path, sep='::', names=cols_dict['users'], engine='python')
+items_data = pd.read_csv(items_data_path, sep='::', names=cols_dict['items'], encoding='latin-1', engine='python')
 
-# Đọc movies.dat
-movies = pd.read_csv("/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/movies.dat", sep="::", engine="python", 
-                     names=["movieId", "title", "genres"], encoding="latin1")
+users_data_og = users_data.copy()
+items_data_og = items_data.copy()
+ratings_data_og = ratings_data.copy()
 
-# Đọc ratings.dat và đổi tên cột MovieID -> ItemID
-ratings_1m = pd.read_csv("/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/ratings.dat", sep="::", engine="python", 
-                      names=['userId', 'movieId', 'rating', 'timestamp'])
+# Mã hóa và tiền xử lý dữ liệu
+users_data = Utils.one_hot_encode(users_data, ['occupation', 'gender', 'age'])
+items_data = Utils.multi_hot_encode(items_data, 'genre')
+users_data = Utils.extract_category_avg_ratings(users_data, items_data, ratings_data)
+items_data = Utils.extract_year(items_data)
+users_data = Utils.move_column(users_data, ['gender_M', 'gender_F'], 0)
+users_data, items_data = Utils.extend_users_items(users_data, items_data, ratings_data)
 
-reverse_movie_mapping = {v: k for k, v in movie_mapping.items()}
-user_embeddings = model.get_layer(index=2).get_weights()[0]
-movie_embeddings = model.get_layer(index=3).get_weights()[0]
+# Chia tập dữ liệu
+X_users_train, X_users_test = train_test_split(users_data, test_size=0.2, random_state=42)
+X_items_train, X_items_test = train_test_split(items_data, test_size=0.2, random_state=42)
+y_ratings_train, y_ratings_test = train_test_split(ratings_data, test_size=0.2, random_state=42)
 
-# Tạo ma trận người dùng - phim
-user_item_matrix = ratings_1m.pivot(index="userId", columns="movieId", values="rating").fillna(0)
+# Chuyển dữ liệu sang dạng numpy
+X_users_train, X_users_test = X_users_train.values, X_users_test.values
+X_items_train, X_items_test = X_items_train.values, X_items_test.values
+y_ratings_train, y_ratings_test = y_ratings_train.values, y_ratings_test.values
 
-# Tính toán độ tương đồng giữa các người dùng
-user_similarity = cosine_similarity(user_item_matrix)
+# Khởi tạo mô hình NCF
+user_dim = users_data.shape[1]
+item_dim = items_data.shape[1]
+num_users = users_data_og['user_id'].max()
+num_items = items_data_og['movie_id'].max()
 
-def collaborative_filtering(user_id, top_k=10):
-    user_idx = user_id - 1  # vì chỉ số bắt đầu từ 0 trong ma trận
-    similar_users = user_similarity[user_idx]
-    
-    # Tìm ra top_k người dùng tương đồng nhất
-    similar_users_idx = np.argsort(similar_users)[::-1][1:top_k+1]
-    
-    # Dự đoán các phim mà người dùng có thể thích dựa trên các người dùng tương tự
-    recommended_movies = []
-    for idx in similar_users_idx:
-        similar_user_ratings = user_item_matrix.iloc[idx]
-        recommended_movies.extend(similar_user_ratings[similar_user_ratings > 0].index)
-    
-    recommended_movies = list(set(recommended_movies))
-    
-    # Lọc ra top_k phim
-    return movies[movies["movieId"].isin(recommended_movies[:top_k])]
+model = NCF(
+    num_users=num_users,
+    num_items=num_items,
+    user_dim=user_dim,
+    item_dim=item_dim,
+    num_factors=32,
+    mode='explicit',
+    criterion=torch.nn.MSELoss(),
+    dropout=0.1,
+    lr=1e-3,
+    weight_decay=1e-5,
+    verbose=True,
+    gpu=True
+)
 
-# Hàm gợi ý cho user mới
-def recommend_for_new_user(user_ratings_100k, top_k=10):
-    mapped_movies = []
-    for movie_id, rating in user_ratings_100k:
-        if movie_id in movie_mapping:
-            mapped_id = movie_mapping[movie_id]
-            mapped_movies.append((mapped_id, rating))
+# Tải mô hình đã huấn luyện
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model.load_state_dict(torch.load('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/notebooks/weights/explicit.pth', map_location=device))
+model.eval()
 
-    if not mapped_movies:
-        return []
-
-    movie_ids, ratings = zip(*mapped_movies)
-    movie_vecs = movie_embeddings[list(movie_ids)]
-    avg_embedding = np.average(movie_vecs, axis=0)
-
-    similarities = cosine_similarity([avg_embedding], user_embeddings)[0]
-    nearest_user_idx = np.argmax(similarities)
-
-    return recommend_movies_by_index(nearest_user_idx, top_k)
-
-# Hàm recommend cho user đã có ID trong 1M
-def recommend_movies_by_index(mapped_user_id, top_k=10):
-    num_movies = len(movie_mapping)
-    all_movie_ids = np.arange(num_movies)
-
-    user_input = np.full(len(all_movie_ids), mapped_user_id).reshape(-1, 1)
-    movie_input = all_movie_ids.reshape(-1, 1)
-
-    predicted_ratings = model.predict([user_input, movie_input], verbose=0)
-    top_indices = predicted_ratings.flatten().argsort()[-top_k:][::-1]
-    top_movie_ids = movie_input[top_indices].flatten()
-
-    top_movie_ids_original = [reverse_movie_mapping[mid] for mid in top_movie_ids]
-    recommended_movies = movies[movies["movieId"].isin(top_movie_ids_original)]
-
-    return recommended_movies[["title", "genres"]]
-
-# Định nghĩa route cho trang chính
-@app.route("/", methods=["GET", "POST"])
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    recommendations = None
-    if request.method == "POST":
-        user_id = int(request.form.get("user_id"))
+    return render_template('index.html')
 
-        # Lấy lịch sử rating của user từ MovieLens 1M
-        user_rated = ratings_1m[ratings_1m["userId"] == user_id][["movieId", "rating"]]
-        rated_movies = list(user_rated.itertuples(index=False, name=None))
+@app.route('/recommend', methods=['POST'])
+def recommend():
+    user_type = request.form['user_type']
+    
+    if user_type == 'new':
+        # Xử lý người dùng mới
+        age = int(request.form['age'])
+        occupation = request.form['occupation']
+        gender = request.form['gender']
+        genres = request.form.getlist('genres')
+        
+        new_user = {
+            'id': 7000,  # ID người dùng mới (có thể thay đổi)
+            'age': age,
+            'occupation': occupation,
+            'gender': gender,
+            'genres': genres
+        }
+        
+        user_id, user, weights, _ = Utils.preprocess_user(
+            user=new_user,
+            num_items=items_data_og.shape[0],
+            users=users_data_og.drop_duplicates(inplace=False).values,
+            weights=[model.user_embedding_mlp.weight.data.cpu().numpy(), model.user_embedding_mf.weight.data.cpu().numpy()]
+        )
+        
+    else:
+        # Xử lý người dùng cũ
+        old_user_id = int(request.form['old_user_id'])
+        old_user = {'id': old_user_id}
+        
+        user_id, user, weights, _ = Utils.preprocess_user(
+            user=old_user,
+            num_items=items_data_og.shape[0],
+            users=users_data_og.drop_duplicates(inplace=False).values,
+            topk=3
+        )
+        
+    # Tiền xử lý item
+    items = Utils.preprocess_items(items_data_og)
+    
+    user_id, user = user_id.to(model.device), user.to(model.device)
+    
+    # 1. Retrieval Stage
+    movies = Utils.retrieve(
+        movies=items,
+        user=user.detach().cpu().numpy(),
+        num_genres=3,
+        k=300,
+        random_state=0
+    )
+    
+    # 2. Filtering Stage
+    movie_ids, movies = Utils.filter(
+        movies=movies,
+        ratings=ratings_data_og,
+        user_id=user_id.item()
+    )
+    
+    movie_ids, movies = movie_ids.to(model.device), movies.to(model.device)
+    
+    # 3. Ranking Stage
+    y_pred = model(
+        user_id[:len(movies)],
+        movie_ids,
+        user[:len(movies)],
+        movies,
+        weights
+    ).cpu().detach().numpy()
+    
+    # 4. Ordering Stage
+    movies_retrieved = items_data_og[items_data_og['movie_id'].isin(movie_ids.cpu().numpy())].sort_values(
+        by='movie_id', key=lambda x: pd.Categorical(x, categories=movie_ids.cpu().numpy(), ordered=True)
+    )
+    
+    # Lấy top 10 phim
+    top_movies = Utils.order(y_pred, movies_retrieved, 'explicit', top_k=10)
+    
+    return render_template('results.html', movies=top_movies)
 
-        if rated_movies:
-            # Sử dụng NCF để gợi ý
-            recommendations = recommend_for_new_user(rated_movies, top_k=10)
-            recommendations = recommendations.to_dict(orient="records")
-        else:
-            # Nếu không có rating, sử dụng CF
-            recommendations = collaborative_filtering(user_id, top_k=10)
-            recommendations = recommendations.to_dict(orient="records")
-
-    return render_template("index.html", recommendations=recommendations)
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
