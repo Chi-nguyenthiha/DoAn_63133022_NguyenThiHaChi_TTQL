@@ -1,6 +1,6 @@
 # DoAn_63133022_NguyenThiHaChi
 "Everything here serves my undergraduate thesis project."
-"Mọi thứ ở đây phục vụ cho đồ án của em, xin đừng đập gậy ạ"
+"Mọi thứ ở đây phục vụ cho đồ án"
 
 🚀 Cách sử dụng
 

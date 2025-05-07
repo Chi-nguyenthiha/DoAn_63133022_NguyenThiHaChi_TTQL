@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 import torch
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import numpy as np
 import sys
 
 # Thêm thư mục chứa utils vào sys.path
@@ -34,15 +35,31 @@ items_data = Utils.extract_year(items_data)
 users_data = Utils.move_column(users_data, ['gender_M', 'gender_F'], 0)
 users_data, items_data = Utils.extend_users_items(users_data, items_data, ratings_data)
 
-# Chia tập dữ liệu
-X_users_train, X_users_test = train_test_split(users_data, test_size=0.2, random_state=42)
-X_items_train, X_items_test = train_test_split(items_data, test_size=0.2, random_state=42)
-y_ratings_train, y_ratings_test = train_test_split(ratings_data, test_size=0.2, random_state=42)
+# --- DROP UNUSED COLUMNS ---
+ratings_data = ratings_data.drop(['timestamp'], axis=1)
+users_data = users_data.drop(['user_id', 'zip_code'], axis=1)
+items_data = items_data.drop(['movie_id', 'title'], axis=1)
 
-# Chuyển dữ liệu sang dạng numpy
-X_users_train, X_users_test = X_users_train.values, X_users_test.values
-X_items_train, X_items_test = X_items_train.values, X_items_test.values
-y_ratings_train, y_ratings_test = y_ratings_train.values, y_ratings_test.values
+
+# --- NORMALIZATION ---
+ratings_data['rating'] = ratings_data['rating'] / 5.0
+items_data['year'] = items_data['year'] / items_data['year'].max()
+users_data.iloc[:, -18:] = users_data.iloc[:, -18:] / users_data.iloc[:, -18:].max().max()
+
+# --- SPLIT DATA ---
+X_users_train, X_users_test = train_test_split(users_data, test_size=0.2, random_state=42)
+X_users_val, X_users_test = train_test_split(X_users_test, test_size=0.5, random_state=42)
+
+X_items_train, X_items_test = train_test_split(items_data, test_size=0.2, random_state=42)
+X_items_val, X_items_test = train_test_split(X_items_test, test_size=0.5, random_state=42)
+
+y_ratings_train, y_ratings_test = train_test_split(ratings_data, test_size=0.2, random_state=42)
+y_ratings_val, y_ratings_test = train_test_split(y_ratings_test, test_size=0.5, random_state=42)
+
+# --- CONVERT TO NUMPY ---
+X_users_train, X_users_val, X_users_test = X_users_train.values, X_users_val.values, X_users_test.values
+X_items_train, X_items_val, X_items_test = X_items_train.values, X_items_val.values, X_items_test.values
+y_ratings_train, y_ratings_val, y_ratings_test = y_ratings_train.values, y_ratings_val.values, y_ratings_test.values
 
 # Khởi tạo mô hình NCF
 user_dim = users_data.shape[1]
@@ -70,89 +87,94 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.load_state_dict(torch.load('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/notebooks/weights/explicit.pth', map_location=device))
 model.eval()
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    return render_template('index.html')
+def recommend_movies_for_existing_user(user_id_int, model, users_data, items_data_og, ratings_data_og, top_k=10, k_retrieve=300):
+    """
+    Trả về danh sách top_k bộ phim đề xuất cho người dùng đã tồn tại dựa trên lịch sử tương tác.
+    
+    Args:
+        user_id_int (int): ID người dùng đã tồn tại trong tập dữ liệu.
+        model (NCF): Mô hình đã huấn luyện.
+        users_data (DataFrame): Dữ liệu người dùng đã xử lý.
+        items_data_og (DataFrame): Dữ liệu phim gốc.
+        ratings_data_og (DataFrame): Dữ liệu ratings gốc.
+        top_k (int): Số lượng phim đề xuất.
+        k_retrieve (int): Số lượng phim được lấy trong bước Retrieval.
 
-@app.route('/recommend', methods=['POST'])
-def recommend():
-    user_type = request.form['user_type']
-    
-    if user_type == 'new':
-        # Xử lý người dùng mới
-        age = int(request.form['age'])
-        occupation = request.form['occupation']
-        gender = request.form['gender']
-        genres = request.form.getlist('genres')
-        
-        new_user = {
-            'id': 7000,  # ID người dùng mới (có thể thay đổi)
-            'age': age,
-            'occupation': occupation,
-            'gender': gender,
-            'genres': genres
-        }
-        
-        user_id, user, weights, _ = Utils.preprocess_user(
-            user=new_user,
-            num_items=items_data_og.shape[0],
-            users=users_data_og.drop_duplicates(inplace=False).values,
-            weights=[model.user_embedding_mlp.weight.data.cpu().numpy(), model.user_embedding_mf.weight.data.cpu().numpy()]
-        )
-        
-    else:
-        # Xử lý người dùng cũ
-        old_user_id = int(request.form['old_user_id'])
-        old_user = {'id': old_user_id}
-        
-        user_id, user, weights, _ = Utils.preprocess_user(
-            user=old_user,
-            num_items=items_data_og.shape[0],
-            users=users_data_og.drop_duplicates(inplace=False).values,
-            topk=3
-        )
-        
-    # Tiền xử lý item
-    items = Utils.preprocess_items(items_data_og)
-    
-    user_id, user = user_id.to(model.device), user.to(model.device)
-    
-    # 1. Retrieval Stage
+    Returns:
+        DataFrame: Danh sách phim đề xuất cùng điểm dự đoán.
+    """
+    import torch
+
+    old_user = {'id': user_id_int}
+
+    # Bước 1: Tiền xử lý user
+    user_id, user_tensor, _, _ = Utils.preprocess_user(
+        user=old_user,
+        num_items=items_data_og.shape[0],
+        users=users_data.drop_duplicates(inplace=False).values,
+        topk=3,
+        verbose=False
+    )
+
+    # Bước 2: Tiền xử lý item
+    items_tensor = Utils.preprocess_items(items_data_og)
+
+    # Chuyển tensor sang thiết bị phù hợp
+    user_id, user_tensor = user_id.to(model.device), user_tensor.to(model.device)
+
+    # Bước 3: Retrieval
     movies = Utils.retrieve(
-        movies=items,
-        user=user.detach().cpu().numpy(),
-        num_genres=3,
-        k=300,
+        movies=items_tensor,
+        user=user_tensor.detach().cpu().numpy(),
+        k=k_retrieve,
         random_state=0
     )
-    
-    # 2. Filtering Stage
+
+    # Bước 4: Filter phim đã xem
     movie_ids, movies = Utils.filter(
         movies=movies,
         ratings=ratings_data_og,
-        user_id=user_id.item()
+        user_id=user_id_int
     )
-    
     movie_ids, movies = movie_ids.to(model.device), movies.to(model.device)
-    
-    # 3. Ranking Stage
+
+    # Bước 5: Dự đoán rating
     y_pred = model(
         user_id[:len(movies)],
         movie_ids,
-        user[:len(movies)],
-        movies,
-        weights
+        user_tensor[:len(movies)],
+        movies
     ).cpu().detach().numpy()
-    
-    # 4. Ordering Stage
-    movies_retrieved = items_data_og[items_data_og['movie_id'].isin(movie_ids.cpu().numpy())].sort_values(
-        by='movie_id', key=lambda x: pd.Categorical(x, categories=movie_ids.cpu().numpy(), ordered=True)
+
+    # Bước 6: Sắp xếp phim
+    movies_retrieved = items_data_og[items_data_og['movie_id'].isin(movie_ids.cpu().numpy())]
+    movies_retrieved = movies_retrieved.sort_values(
+        by='movie_id',
+        key=lambda x: pd.Categorical(x, categories=movie_ids.cpu().numpy(), ordered=True)
     )
-    
-    # Lấy top 10 phim
-    top_movies = Utils.order(y_pred, movies_retrieved, 'explicit', top_k=10)
-    
-    return render_template('results.html', movies=top_movies)
+
+    top_recommendations = Utils.order(y_pred, movies_retrieved, mode='explicit', top_k=top_k)
+    return top_recommendations
+
+
+@app.route('/recommend_existing', methods=['GET', 'POST'])
+def recommend_existing():
+    if request.method == 'POST':
+        try:
+            user_id = int(request.form['user_id'])  # Lấy user_id từ form
+            recommended_df = recommend_movies_for_existing_user(
+                user_id_int=user_id,
+                model=model,
+                users_data=users_data,
+                items_data_og=items_data_og,
+                ratings_data_og=ratings_data_og,
+                top_k=10
+            )
+            # Truyền dữ liệu vào template để hiển thị
+            return render_template('recommend_result.html', tables=[recommended_df.to_html(classes='data')], user_id=user_id)
+        except Exception as e:
+            return f"Lỗi: {str(e)}"
+    return render_template('recommend_form.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

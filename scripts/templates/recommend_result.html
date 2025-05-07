@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎬 Kết quả đề xuất</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #fff3f3;
+            font-family: 'Quicksand', sans-serif;
+            padding: 30px;
+        }
+        h2 {
+            text-align: center;
+            color: #f06292;
+            margin-bottom: 30px;
+        }
+        table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            width: 80%;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0px 6px 16px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #fce4ec;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f8bbd0;
+            color: #880e4f;
+        }
+        td {
+            background-color: #fff;
+        }
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #f06292;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>🎉 Phim đề xuất cho người dùng ID: {{ user_id }} 🎉</h2>
+    {% for table in tables %}
+        {{ table | safe }}
+    {% endfor %}
+    <a href="/recommend_existing">← Quay lại trang nhập</a>
+</body>
+</html>

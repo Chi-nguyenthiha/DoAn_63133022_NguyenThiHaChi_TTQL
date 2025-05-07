@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎬 Movie Recommendation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #fceff9;
+            font-family: 'Quicksand', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .form-container {
+            background: #ffffff;
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0px 8px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h2 {
+            color: #ec5e98;
+            margin-bottom: 20px;
+        }
+        input[type="number"] {
+            padding: 10px;
+            border: 2px solid #ec5e98;
+            border-radius: 8px;
+            width: 200px;
+            margin-bottom: 20px;
+        }
+        input[type="submit"] {
+            background-color: #ec5e98;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        input[type="submit"]:hover {
+            background-color: #d94c89;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>🎀 Nhập ID người dùng để nhận đề xuất phim 🎀</h2>
+        <form method="POST">
+            <input type="number" name="user_id" placeholder="VD: 400" required><br>
+            <input type="submit" value="Xem đề xuất ✨">
+        </form>
+    </div>
+</body>
+</html>
