@@ -5,5 +5,5 @@
 🚀 Cách sử dụng
 
 
-👉 Truy cập: http://127.0.0.1:5000
+👉 Truy cập: http://127.0.0.1:5000/recommend_existing
             Press CTRL+C to quit
