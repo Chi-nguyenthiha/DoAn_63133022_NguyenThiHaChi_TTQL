@@ -11,7 +11,7 @@ from model import NCF
 sys.path.append('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/scripts/ncf-utils')
 pd.set_option("display.max_columns", 6)
 import os
-os.makedirs("weights", exist_ok=True)
+os.makedirs("weightss", exist_ok=True)
 print("🔹 Loading data...")
 ratings_data = pd.read_csv('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/ratings.dat', sep='::', names=cols_dict['ratings'], engine='python')
 users_data = pd.read_csv('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/users.dat', sep='::', names=cols_dict['users'], engine='python')
@@ -89,7 +89,7 @@ model = NCF(
     gpu=True
 )
 
-early_stopping = EarlyStopping(patience=3, delta=0.0002, path='weights/explicit.pth')
+early_stopping = EarlyStopping(patience=3, delta=0.0002, path='weightss/explicit.pth')
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(model.optimizer, mode='min', factor=0.1, patience=0)
 
 history = model.fit(

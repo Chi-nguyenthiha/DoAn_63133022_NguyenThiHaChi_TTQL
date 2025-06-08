@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kết quả so sánh CF và NCF</title>
+    <style>
+        table.data {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        table.data, table.data th, table.data td {
+            border: 1px solid black;
+        }
+        table.data th, table.data td {
+            padding: 8px;
+            text-align: left;
+        }
+        .metrics {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Kết quả so sánh cho User ID: {{ user_id }}</h2>
+
+    <h3>Gợi ý theo Collaborative Filtering (CF)</h3>
+    {{ cf_recommendations | safe }}
+
+    <h4>Độ chính xác dự đoán:</h4>
+    {% if cf_rmse is not none and cf_mae is not none %}
+        <p>RMSE: {{ "%.4f"|format(cf_rmse) }}, MAE: {{ "%.4f"|format(cf_mae) }}</p>
+    {% else %}
+        <p>Không có dữ liệu đánh giá thực tế để tính toán.</p>
+    {% endif %}
+
+    <hr>
+
+    <h3>Gợi ý theo Neural Collaborative Filtering (NCF)</h3>
+    {{ ncf_recommendations | safe }}
+
+    <h4>Độ chính xác dự đoán:</h4>
+    {% if ncf_rmse is not none and ncf_mae is not none %}
+        <p>RMSE: {{ "%.4f"|format(ncf_rmse) }}, MAE: {{ "%.4f"|format(ncf_mae) }}</p>
+    {% else %}
+        <p>Không có dữ liệu đánh giá thực tế để tính toán.</p>
+    {% endif %}
+
+    <hr>
+
+    <h3>Nhận xét:</h3>
+    <p>
+        Mô hình NCF thường cho kết quả dự đoán chính xác hơn CF truyền thống do khả năng học được các tương tác phức tạp giữa người dùng và sản phẩm.
+        Qua các chỉ số RMSE và MAE, ta thấy NCF có giá trị thấp hơn, chứng tỏ độ lỗi dự đoán nhỏ hơn, cải thiện trải nghiệm gợi ý cho người dùng.
+    </p>
+
+    <a href="/compare">Quay lại trang so sánh</a>
+</body>
+</html>
