@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🎀 Movie Recommendation System 🎀</title>
+  <link rel="stylesheet" href="scripts/static/stylee.css>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">🍿 Movie Recommendation System 🍭</h1>
+    <form method="POST">
+      <label for="user_id">👤 Enter your User ID:</label>
+      <input type="number" name="user_id" id="user_id" required placeholder="e.g. 123">
+      
+      <label for="method">🧠 Choose Recommendation Method:</label>
+      <select name="method" id="method">
+        <option value="ncf">🌟 Neural Collaborative Filtering (NCF)</option>
+        <option value="user_cf">👯 User-based Collaborative Filtering</option>
+        <option value="item_cf">🎥 Item-based Collaborative Filtering</option>
+      </select>
+
+      <button type="submit">🎬 Recommend!</button>
+    </form>
+  </div>
+</body>
+</html>

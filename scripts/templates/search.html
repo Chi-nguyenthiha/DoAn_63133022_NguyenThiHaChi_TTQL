@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tìm phim - Web Phim Dễ Thương</title>
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    body {
+      background: #fff7f8;
+      color: #333;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 700px;
+      margin: 20px auto;
+      background: #fff0f6;
+      border-radius: 20px;
+      box-shadow: 0 8px 16px rgba(255,111,145,0.25);
+      padding: 25px 40px;
+    }
+    h2 {
+      color: #ff6f91;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 1px 1px 2px #ffb6c1;
+    }
+    form.search {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    form.search input[type="text"] {
+      padding: 12px 18px;
+      width: 300px;
+      border-radius: 20px;
+      border: 1.5px solid #ff6f91;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+    form.search input[type="text"]:focus {
+      border-color: #ff3f6a;
+    }
+    form.search button {
+      background-color: #ff6f91;
+      border: none;
+      border-radius: 20px;
+      color: white;
+      padding: 12px 24px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 3px 8px rgba(255,111,145,0.4);
+      transition: background-color 0.3s ease;
+      margin-left: 10px;
+    }
+    form.search button:hover {
+      background-color: #ff3f6a;
+    }
+    ul {
+      list-style: none;
+    }
+    ul li {
+      background: #ffdde1;
+      margin: 10px 0;
+      padding: 12px 18px;
+      border-radius: 15px;
+      box-shadow: 0 3px 6px rgba(255,111,145,0.3);
+      font-weight: 600;
+      color: #a83256;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    ul li a {
+      color: #ff6f91;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    ul li a:hover {
+      text-decoration: underline;
+    }
+    .back-home {
+      display: block;
+      margin-top: 25px;
+      text-align: center;
+      font-weight: 700;
+      color: #ff6f91;
+    }
+    .back-home:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Kết quả tìm kiếm cho: "{{ query }}"</h2>
+    <form class="search" action="{{ url_for('search') }}" method="get">
+      <input type="text" name="q" placeholder="Tìm phim yêu thích..." autocomplete="off" value="{{ query }}" />
+      <button type="submit">🔍 Tìm kiếm</button>
+    </form>
+    <ul>
+      {% if movies %}
+        {% for movie in movies %}
+          <li>
+            {{ movie.title }} ({{ movie.genre }})
+            <a href="{{ url_for('rate_movie', movie_id=movie.movie_id) }}">Đánh giá</a>
+          </li>
+        {% endfor %}
+      {% else %}
+        <li>Không tìm thấy phim nào phù hợp 😢</li>
+      {% endif %}
+    </ul>
+    <a href="{{ url_for('home') }}" class="back-home">← Quay về trang chủ</a>
+  </div>
+</body>
+</html>

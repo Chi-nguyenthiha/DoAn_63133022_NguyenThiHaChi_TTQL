@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 from sklearn.model_selection import train_test_split
 from IPython.display import display
-sys.path.append('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/scripts/ncf-utils')
+sys.path.append('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/scripts/ncf-utils') #đổi đường dẫn này theo thư mục của bạn
 from utils import Utils, EarlyStopping, cols_dict
 from model import NCF
 
@@ -13,6 +13,7 @@ pd.set_option("display.max_columns", 6)
 import os
 os.makedirs("weightss", exist_ok=True)
 print("🔹 Loading data...")
+#đổi đường dẫn này theo thư mục của bạn
 ratings_data = pd.read_csv('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/ratings.dat', sep='::', names=cols_dict['ratings'], engine='python')
 users_data = pd.read_csv('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/users.dat', sep='::', names=cols_dict['users'], engine='python')
 items_data = pd.read_csv('/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/movies.dat', sep='::', names=cols_dict['items'], encoding='latin-1', engine='python')
@@ -224,3 +225,4 @@ y_pred = model(
 # 4- Ordering Stage
 movies_retrieved = items_data_og[items_data_og['movie_id'].isin(movie_ids.cpu().numpy())].sort_values(by='movie_id', key=lambda x: pd.Categorical(x, categories=movie_ids.cpu().numpy(), ordered=True))
 Utils.order(y_pred, movies_retrieved, 'eplicit', top_k=10)
+

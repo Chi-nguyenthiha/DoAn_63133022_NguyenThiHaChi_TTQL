@@ -6,7 +6,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import train_test_split
 
 # --- Load your data ---
-ratings_data = pd.read_csv("/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/ratings.dat", sep='::', 
+ratings_data = pd.read_csv("/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset/1m/ratings.dat", sep='::', #đổi đường dẫn này theo thư mục của bạn
                             names=['user_id', 'movie_id', 'rating', 'timestamp'], engine='python')
 
 # --- Pivot ratings matrix ---
@@ -23,8 +23,9 @@ user_similarity_df = pd.DataFrame(user_similarity, index=rating_matrix_filled.in
 item_similarity_df = pd.DataFrame(item_similarity, index=rating_matrix_filled.columns, columns=rating_matrix_filled.columns)
 
 # --- Split into train, val, test ---
-train_data, temp_data = train_test_split(ratings_data, test_size=0.2, random_state=42)
-val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42)
+# Split dataset theo tỷ lệ 80% Train – 10% Val – 10% Test
+train_data, temp_data = train_test_split(ratings_data, test_size=0.2, random_state=42)         # 80% train, 20% temp
+val_data, test_data = train_test_split(temp_data, test_size=0.5, random_state=42)              # temp 20% tách tiếp 10% val + 10% test
 
 # --- Pivot full matrix from train only ---
 ratings_matrix = train_data.pivot(index='user_id', columns='movie_id', values='rating')
@@ -63,11 +64,13 @@ test_data['pred_item_cf'] = test_data.apply(lambda row: predict_item_cf(row['use
 test_data = test_data.dropna(subset=['pred_user_cf', 'pred_item_cf'])
 
 # --- Evaluate ---
+# Tính MAE và RMSE
 mae_user = mean_absolute_error(test_data['rating'], test_data['pred_user_cf'])
-rmse_user = mean_squared_error(test_data['rating'], test_data['pred_user_cf'], squared=False)
+rmse_user = np.sqrt(mean_squared_error(test_data['rating'], test_data['pred_user_cf']))
 
 mae_item = mean_absolute_error(test_data['rating'], test_data['pred_item_cf'])
-rmse_item = mean_squared_error(test_data['rating'], test_data['pred_item_cf'], squared=False)
+rmse_item = np.sqrt(mean_squared_error(test_data['rating'], test_data['pred_item_cf']))
 
-print(f"User-based CF -> MAE: {mae_user:.4f}, RMSE: {rmse_user:.4f}")
-print(f"Item-based CF -> MAE: {mae_item:.4f}, RMSE: {rmse_item:.4f}")
+# Hiển thị kết quả
+print(f"🔹 User-based CF MAE: {mae_user:.4f}, RMSE: {rmse_user:.4f}")
+print(f"🔹 Item-based CF MAE: {mae_item:.4f}, RMSE: {rmse_item:.4f}")

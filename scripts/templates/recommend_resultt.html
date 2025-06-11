@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🎀 Recommendations for You 🎀</title>
+  <link rel="stylesheet" href="scripts/static/stylee.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">📽️ Top Movie Recommendations for User #{{ user_id }}</h1>
+    
+    {% if tables %}
+      <div class="table-wrapper">
+        {% for table in tables %}
+          {{ table|safe }}
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>No recommendations found.</p>
+    {% endif %}
+
+    <a href="/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/scripts/templates/recommend_formm.html" class="back-button">🔙 Back</a>
+  </div>
+</body>
+</html>

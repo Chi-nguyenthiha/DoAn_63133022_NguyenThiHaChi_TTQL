@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đăng nhập - Web Phim Dễ Thương</title>
+  <style>
+    /* Dùng chung style với home.html */
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family:Arial, Helvetica, sans-serif;
+    }
+    body {
+      background: #fff7f8;
+      color: #333;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .login-container {
+      background: #fff0f6;
+      padding: 40px 50px;
+      border-radius: 25px;
+      box-shadow: 0 8px 16px rgba(255,111,145,0.25);
+      width: 320px;
+      text-align: center;
+    }
+    h2 {
+      color: #ff6f91;
+      margin-bottom: 25px;
+      text-shadow: 1px 1px 2px #ffb6c1;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 15px;
+      border-radius: 20px;
+      border: 1.5px solid #ff6f91;
+      font-weight: 600;
+      margin-bottom: 20px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+    input[type="text"]:focus {
+      border-color: #ff3f6a;
+    }
+    button {
+      background-color: #ff6f91;
+      border: none;
+      border-radius: 25px;
+      color: white;
+      padding: 12px 0;
+      width: 100%;
+      font-weight: 700;
+      box-shadow: 0 3px 8px rgba(255,111,145,0.4);
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #ff3f6a;
+    }
+    .footer {
+      margin-top: 18px;
+      font-size: 14px;
+      color: #a83256;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Đăng nhập</h2>
+    <form action="{{ url_for('login') }}" method="post">
+      <input type="text" name="user_id" placeholder="Nhập ID người dùng" required autocomplete="off" />
+      <button type="submit">Đăng nhập</button>
+    </form>
+    <div class="footer">Nhập đúng ID để bắt đầu xem phim nhé! 🎬💕</div>
+  </div>
+</body>
+</html>

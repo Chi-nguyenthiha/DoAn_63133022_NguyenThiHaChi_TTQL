@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trang Chủ - Web Phim Dễ Thương</title>
+  <style>
+    /* Reset cơ bản */
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family:Arial, Helvetica, sans-serif;
+    }
+    body {
+      background: #fff7f8; /* hồng pastel */
+      color: #333;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h2, h3 {
+      color: #ff6f91;
+      margin-bottom: 12px;
+      text-align: center;
+      text-shadow: 1px 1px 2px #ffb6c1;
+    }
+    a {
+      text-decoration: none;
+      color: #ff6f91;
+      font-weight: 600;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Khung chính */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff0f6;
+      border-radius: 20px;
+      box-shadow: 0 8px 16px rgba(255,111,145,0.25);
+      padding: 25px 40px;
+    }
+
+    /* Form chọn method */
+    form select {
+      padding: 8px 15px;
+      border-radius: 20px;
+      border: 1.5px solid #ff6f91;
+      background: #ffe6eb;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-bottom: 25px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      width: 200px;
+      text-align: center;
+    }
+    form select:hover {
+      background-color: #ffb6c1;
+    }
+
+    ul {
+      list-style: none;
+      margin-bottom: 25px;
+    }
+    ul li {
+      background: #ffdde1;
+      margin: 8px 0;
+      padding: 10px 15px;
+      border-radius: 15px;
+      box-shadow: 0 3px 5px rgba(255,111,145,0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      color: #a83256;
+    }
+
+    /* Form đánh giá */
+    ul li form {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    ul li input[type="number"] {
+      width: 50px;
+      padding: 5px;
+      border-radius: 10px;
+      border: 1px solid #ff6f91;
+      text-align: center;
+      font-weight: 600;
+    }
+    ul li button {
+      background-color: #ff6f91;
+      border: none;
+      border-radius: 20px;
+      color: white;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 3px 8px rgba(255,111,145,0.4);
+      transition: background-color 0.3s ease;
+    }
+    ul li button:hover {
+      background-color: #ff3f6a;
+    }
+
+    /* Form tìm kiếm */
+    form.search {
+      text-align: center;
+      margin-top: 30px;
+    }
+    form.search input[type="text"] {
+      padding: 10px 15px;
+      width: 250px;
+      border-radius: 20px;
+      border: 1.5px solid #ff6f91;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+    form.search input[type="text"]:focus {
+      border-color: #ff3f6a;
+    }
+    form.search button {
+      background-color: #ff6f91;
+      border: none;
+      border-radius: 20px;
+      color: white;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 3px 8px rgba(255,111,145,0.4);
+      transition: background-color 0.3s ease;
+      margin-left: 10px;
+    }
+    form.search button:hover {
+      background-color: #ff3f6a;
+    }
+
+    /* Logout link */
+    .logout {
+      text-align: right;
+      margin-bottom: 15px;
+    }
+
+    /* Thể loại */
+    .genres {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .genres li {
+      background: #ffb6c1;
+      padding: 6px 14px;
+      border-radius: 15px;
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 3px 6px rgba(255,111,145,0.6);
+      cursor: default;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logout">
+      <a href="{{ url_for('logout') }}">Đăng xuất</a>
+    </div>
+
+    <h2>Chào bạn, User {{ user_id }}!</h2>
+
+    <form method="get" action="{{ url_for('home') }}">
+      <label for="method">Chọn cách gợi ý phim:</label>
+      <select name="method" id="method" onchange="this.form.submit()">
+        <option value="ncf" {% if method == 'ncf' %}selected{% endif %}>Neural Collaborative Filtering (NCF)</option>
+        <!--<option value="cf" {% if method == 'cf' %}selected{% endif %}>Collaborative Filtering (CF)</option>-->
+        <option value="usercf" {% if method == 'usercf' %}selected{% endif %}>User-based Collaborative Filtering (UCF)</option>
+        <option value="itemcf"{% if method == 'itemcf' %}selected{% endif %}>Item-based CF</option> 
+      </select>
+    </form>
+
+    <h3>Thể loại bạn thường xem</h3>
+    <ul class="genres">
+      {% for genre in top_genres %}
+      <li>{{ genre }}</li>
+      {% endfor %}
+    </ul>
+    <div class="evaluation-metrics">
+    <h3>Tiêu Chí Đánh Giá ({{ method|upper }})</h3>
+    <p><strong>MAE:</strong> {{ "%.4f"|format(mae) }}</p>
+    <p><strong>RMSE:</strong> {{ "%.4f"|format(rmse) }}</p>
+    <p><strong>Thời gian dự đoán cho mỗi bộ phim:</strong> {{ "%.6f"|format(latency) }} seconds</p>
+    </div>
+
+
+    <h3>Phim đề xuất cho bạn</h3>
+    <ul>
+      {% for movie in movies %}
+      <li>
+        {{ movie.title }} ({{ movie.genre }})
+        <form action="{{ url_for('rate_movie') }}" method="post" title="Đánh giá phim này">
+          <input type="hidden" name="movie_id" value="{{ movie.movie_id }}">
+          <input type="number" name="rating" min="1" max="5" step="0.5" placeholder="★" title="Đánh giá từ 1 đến 5" required>
+          <button type="submit">Gửi</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    
+
+
+    <form class="search" action="{{ url_for('search') }}" method="get">
+      <input type="text" name="q" placeholder="Tìm phim yêu thích..." autocomplete="off" />
+      <button type="submit">🔍 Tìm kiếm</button>
+    </form>
+  </div>
+</body>
+</html>
