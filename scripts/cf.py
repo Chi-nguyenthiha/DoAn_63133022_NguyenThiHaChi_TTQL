@@ -1,3 +1,4 @@
+#file python xây dựng mô hình Collaborative Filtering (CF) với dữ liệu MovieLens 1M
 # --- Import libraries ---
 import pandas as pd
 import numpy as np
