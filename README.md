@@ -6,5 +6,5 @@
 
 
 
-👉 Truy cập: http://127.0.0.1:5000/recommend_existing
-            Press CTRL+C to quit
+👉 Truy cập: http://127.0.0.1:5000/
+            Press CTRL+C in Terminal to quit
