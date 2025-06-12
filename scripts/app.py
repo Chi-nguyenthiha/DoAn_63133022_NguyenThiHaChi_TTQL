@@ -1,4 +1,5 @@
 # movie_app.py
+# File xây dựng ứng dụng Flask để phục vụ mô hình NCF và CF
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import torch
 import pandas as pd
