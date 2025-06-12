@@ -3,7 +3,7 @@
 "Mọi thứ ở đây phục vụ cho đồ án"
 
 🚀 Mô tả các file
-
+/Users/chi.nguyenth/Documents/DoAn_63133022_NguyenThiHaChi/dataset :
 
 
 👉 Truy cập: http://127.0.0.1:5000/
