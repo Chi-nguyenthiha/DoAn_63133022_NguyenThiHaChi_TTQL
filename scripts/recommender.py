@@ -1,3 +1,4 @@
+# file pythone xây dựng mô hình NCF (Neural Collaborative Filtering) với dữ liệu MovieLens 1M
 import torch, pandas, numpy, sklearn, IPython
 import sys
 import pandas as pd
